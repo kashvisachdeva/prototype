@@ -2,8 +2,6 @@ pymongo
 langchain
 openai
 flask
-spacy
-os
 json
 logging
 flask 
