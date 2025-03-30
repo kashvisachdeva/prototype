@@ -76,4 +76,5 @@ def process_query():
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.getenv("PORT", 4000))  # Use the PORT environment variable if available
+    app.run(host='0.0.0.0', port=port, debug=True)
