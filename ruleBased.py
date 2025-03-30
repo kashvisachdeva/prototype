@@ -3,13 +3,26 @@ from datetime import datetime, timedelta
 import re
 import calendar
 from bson import json_util
+from dotenv import load_dotenv
+from urllib.parse import quote_plus
+import os
+from pymongo import MongoClient
 
 
-
-# Load augmented queries
-with open("C:/Users/123/prototype/augmented_queries.json", "r") as f:
-    queries = json.load(f)
 # Function to extract date range dynamically
+dotenv_path = os.path.join(os.getcwd(), ".env")  # Ensure correct path
+load_dotenv(dotenv_path)
+
+USERNAME = quote_plus(os.getenv("MONGO_USER", "default_user"))
+PASSWORD = quote_plus(os.getenv("MONGO_PASS", "default_pass"))
+CLUSTER = os.getenv("MONGO_CLUSTER", "cluster0")
+
+uri = f"mongodb+srv://{USERNAME}:{PASSWORD}@{CLUSTER}.stgq1pn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+#print(uri)
+client = MongoClient(uri)
+# MongoDB client setup
+db = client["crm_system"]  
+collection = db["call_logs"] 
 
 #constants defined
 COUNT_WORDS = {"count", "number", "how many", "total"}
@@ -151,25 +164,16 @@ def normalize_query(query):
     return query
 
 def extract_agents(query):
-    with open("C:/Users/123/prototype/call_logs_sample.json", "r") as f:
-        data = json.load(f)
-
-    agents = list(set(entry["agent"] for entry in data))
+    agents = collection.distinct("agent")  # This will return a list of unique agent values
     query = query.lower()
-
-    # List to store agents found in the query
-    
-    # Check if any of the agents in the list are mentioned in the query
     for agent in agents:
         if agent.lower() in query:  # Check if agent's name is in the query
             return agent
     return None
 
 def extract_customers(query):
-    with open("C:/Users/123/prototype/call_logs_sample.json", "r") as f:
-        data = json.load(f)
-
-    customers = list(set(entry["customer"] for entry in data))
+    
+    customers = collection.distinct("customer")  # This will return a list of unique customer values
     query=query.lower()
     for c in customers:
         if c.lower() in query:
@@ -514,7 +518,7 @@ def generate_mongo_query(query):
     # Convert Python object to a properly formatted JSON string
     return json.dumps(mongo_query)  
 
-queries = [
+'''queries = [
     "who has the most frequent completed calls?",
     "total calls in last month",
     "how many missed calls in last week?",
@@ -526,3 +530,5 @@ for q in queries:
     mongo_q = generate_mongo_query(q)
     print(f"\nQuery: {q}")
     print(f"MongoDB Query: {mongo_q}")
+'''
+
