@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flask Query POST Request</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 10px;
+            width: 300px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>CRM CALL LOGS</h1>
+
+    <label for="query">Enter your query:</label>
+    <input type="text" id="query" placeholder="How many calls were made last month?">
+    <button onclick="submitQuery()">Submit Query</button>
+
+    <h2>Response:</h2>
+    <pre id="response"></pre>
+
+    <script>
+        const  submitQuery=async() => {
+            const query = document.getElementById("query").value;
+
+            // Check if the query is not empty
+            if (!query) {
+                alert("Please enter a query.");
+                return;
+            }
+
+            // Prepare the POST request body
+            try{
+                const response = await fetch("http://localhost:5000/query", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ query: query }),
+            });
+                if (response.ok){
+                    const data=await response.json();
+                    console.log("Response Data:", data);
+                    document.getElementById("response").textContent = JSON.stringify(data, null, 2);
+                }
+                else{
+                    console.log("nothing fetched")
+                    console.error("Error!", response.statusText);
+                    document.getElementById("response").textContent = `Error: ${response.statusText}`;
+                }
+            }
+            catch(error){
+                console.log("inside catch")
+                console.error("Fetch error:", error);
+                document.getElementById("response").textContent = `Fetch error: ${error.message}`;
+            }
+                
+        }
+        </script>
+
+</body>
+</html>

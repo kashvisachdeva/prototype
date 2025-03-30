@@ -1,0 +1,18 @@
+pymongo
+langchain
+openai
+flask
+spacy
+os
+json
+import logging
+flask 
+flask_cors 
+pymongo 
+bson.json_util 
+dotenv 
+ruleBed 
+urllib.parse 
+datetime
+calendar
+bson
