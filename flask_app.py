@@ -24,9 +24,16 @@ client = MongoClient(uri)
 # MongoDB client setup
 db = client["crm_system"]  
 collection = db["call_logs"] 
-app = Flask(__name__)
+
+app = Flask(__name__, static_folder="frontend", template_folder="frontend")
 # Enable CORS for all routes
 CORS(app)  # This will enable CORS for all routes and origins
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
 
 # Function to handle the natural language query
 @app.route('/query', methods=['POST'])
