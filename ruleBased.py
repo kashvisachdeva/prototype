@@ -132,6 +132,7 @@ def get_date_range(query):
         else:
             start_date= None
             end_date=None  # Invalid date range
+
     if start_date is not None and end_date is not None:
         return start_date.strftime("%Y-%m-%dT00:00:00Z"), end_date.strftime("%Y-%m-%dT23:59:59Z") 
     return None, None
@@ -428,26 +429,53 @@ def convert_to_mongo(query):
 
    
             
-    if "average" in query and  "duration" in query:
+    if "duration" in query:
         match_stage = {"$match": mongo_query} if mongo_query else {"$match": {}}
-        group_by_fields={}
+        group_by_fields = {}
 
+        # Check for specific groupings based on the query (e.g., by agent, customer, etc.)
         if "call status" in query or call_status:
-            group_by_fields["call_status"]= "$call_status"
-        if "agent" in query :
+            group_by_fields["call_status"] = "$call_status"
+        if "agent" in query or agent:
             group_by_fields["agent"] = "$agent"
-        if agent:
-            group_by_fields["agent"]="$agent"
-        if "customer" in query  or "customers" in query or customer:
+        if "customer" in query or customer:
             group_by_fields["customer"] = "$customer"
         
+        # Determine whether to calculate total or average duration based on the query
+        if "average" in query:
+            # Calculate average duration
+            agg_field = {"avg_duration": {"$avg": "$duration_minutes"}}
+        elif "total" in query:
+            # Calculate total duration
+            agg_field = {"total_duration": {"$sum": "$duration_minutes"}}
+        elif "maximum" in query or "longest" in query:
+        # Find the maximum (longest) call duration
+            agg_field = {"max_duration": {"$max": "$duration_minutes"}}
+        elif "minimum" in query or "shortest" in query:
+            # Find the minimum (shortest) call duration
+            agg_field = {"min_duration": {"$min": "$duration_minutes"}}
+        elif "greater than" in query or "less than" in query:
+            # Handle duration comparisons (greater than or less than specific values)
+            if duration is not None:
+                if "greater than" in query:
+                    match_stage = {"$match": {**mongo_query, "duration_minutes": {"$gt": duration}}}
+                elif "less than" in query:
+                    match_stage = {"$match": {**mongo_query, "duration_minutes": {"$lt": duration}}}
+            agg_field = {"total_duration": {"$sum": "$duration_minutes"}}  # Default aggregation when filtering duration
+        else:
+            # Default to total if neither is specified
+            agg_field = {"total_duration": {"$sum": "$duration_minutes"}}
+
         group_id = group_by_fields if group_by_fields else None
-        print("group id", group_id)
+
+        print("Group ID:", group_id)
+        
+        # Create the aggregation pipeline based on the conditions
         pipeline = [
-            match_stage,  # Match the base filters
+            match_stage,  # Match the base filters (date, customer, agent, etc.)
             {"$group": {
                 "_id": group_id, 
-                "avg_duration": {"$avg": "$duration_minutes"}
+                **agg_field  # Dynamically add either avg or total based on the query
             }}
         ]
         return pipeline
@@ -517,18 +545,3 @@ def generate_mongo_query(query):
     print("before json dumps mongo:", mongo_query)
     # Convert Python object to a properly formatted JSON string
     return json.dumps(mongo_query)  
-
-'''queries = [
-    "who has the most frequent completed calls?",
-    "total calls in last month",
-    "how many missed calls in last week?",
-    "average duration of calls",
-    "most frequent calls"
-]
-
-for q in queries:
-    mongo_q = generate_mongo_query(q)
-    print(f"\nQuery: {q}")
-    print(f"MongoDB Query: {mongo_q}")
-'''
-
