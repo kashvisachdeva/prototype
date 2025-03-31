@@ -1,7 +1,7 @@
 import os
 import json
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template  # Add render_template
 from flask_cors import CORS
 from pymongo import MongoClient
 from bson.json_util import dumps
